@@ -1,9 +1,9 @@
 import axios from "axios";
 
-const API_URL = `${process.env.REACT_APP_API_URL}/ai`;
+const API_URL = `${import.meta.env.VITE_API_URL}/ai`;
 
 const getAuthConfig = () => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token") || "";
   return {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -46,27 +46,12 @@ interface GenerateCourseStructureRequest {
   difficulty: "beginner" | "intermediate" | "advanced";
 }
 
-interface Lesson {
-  topic: string;
-  order: number;
-}
-
-interface Module {
-  title: string;
-  description: string;
-  prerequisites: string[];
-  difficulty: string;
-  estimatedTime: number;
-  lessons: Lesson[];
-  order: number;
-}
-
 interface GenerateCourseStructureResponse {
   success: boolean;
   data: {
     title: string;
     description: string;
-    modules: Module[];
+    modules: any[];
     rawAIResponse: string;
   };
 }
@@ -99,10 +84,4 @@ export const generateCourseStructure = async (data: GenerateCourseStructureReque
     console.error("Error generating course structure:", error);
     throw error;
   }
-};
-
-export default {
-  generateLessonContent,
-  enhanceContent,
-  generateCourseStructure,
 };

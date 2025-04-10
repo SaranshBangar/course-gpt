@@ -2,23 +2,66 @@ const Course = require("../models/Course");
 const { HfInference } = require("@huggingface/inference");
 require("dotenv").config();
 
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
+console.log("HF_ACCESS_TOKEN available:", !!process.env.HF_ACCESS_TOKEN);
+
+let hf;
+try {
+  hf = new HfInference(process.env.HF_ACCESS_TOKEN);
+  console.log("Hugging Face client initialized successfully");
+} catch (error) {
+  console.error("Error initializing Hugging Face client:", error);
+}
 
 const generateText = async (prompt) => {
   try {
-    const response = await hf.textGeneration({
-      model: "google/flan-t5-xxl",
-      inputs: prompt,
-      parameters: {
-        max_length: 512,
-        temperature: 0.7,
-        top_p: 0.95,
-      },
-    });
-    return response.generated_text;
+    if (!hf) {
+      throw new Error("Hugging Face client not properly initialized");
+    }
+
+    // Define models in order of preference with decreasing size
+    const models = [
+      "google/flan-t5-large", // Use smaller model instead of xxl as default
+      "google/flan-t5-base",
+      "google/flan-t5-small",
+    ];
+
+    let response = null;
+    let error = null;
+
+    // Try models in sequence until one works
+    for (const model of models) {
+      try {
+        console.log(`Sending request to Hugging Face API with model: ${model}`);
+
+        response = await hf.textGeneration({
+          model: model,
+          inputs: prompt,
+          parameters: {
+            max_length: 300, // Reduced from 512
+            temperature: 0.7,
+            top_p: 0.95,
+            return_full_text: false, // Don't return the prompt text to save memory
+          },
+        });
+
+        console.log(`Received successful response from model: ${model}`);
+        break; // Exit loop if successful
+      } catch (modelError) {
+        console.error(`Error with model ${model}:`, modelError.message);
+        error = modelError;
+        // Continue to next model
+      }
+    }
+
+    if (response) {
+      return response.generated_text;
+    } else {
+      throw error || new Error("All models failed");
+    }
   } catch (error) {
-    console.error("Error generating text with Flan-T5-XXL:", error);
-    throw error;
+    console.error("Error generating text:", error);
+    console.log("Using fallback response due to API error");
+    return `I couldn't generate content for "${prompt}" due to resource limitations. Please try again with a simpler request or contact support.`;
   }
 };
 
@@ -129,6 +172,12 @@ exports.enhanceContent = async (req, res, next) => {
 exports.generateCourseStructure = async (req, res, next) => {
   try {
     const { topic, targetAudience, difficulty } = req.body;
+
+    console.log("Received request to generate course structure:", {
+      topic,
+      targetAudience,
+      difficulty,
+    });
 
     const prompt = `Generate a complete course structure for a ${difficulty} level course about ${topic} designed for ${targetAudience}.
     The structure should include a course title, description, and 3-5 modules.

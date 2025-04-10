@@ -50,9 +50,32 @@ exports.getProgress = async (req, res, next) => {
     });
 
     if (!progress) {
-      return res.status(404).json({
-        success: false,
-        message: "Progress not found for this course",
+      // Create a new progress entry if not found
+      const course = await Course.findById(req.params.courseId);
+
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: `Course not found with id of ${req.params.courseId}`,
+        });
+      }
+
+      // Initialize with valid ObjectIds
+      const moduleId = course.modules.length > 0 ? course.modules[0]._id : null;
+      const lessonId = moduleId && course.modules[0].lessons && course.modules[0].lessons.length > 0 ? course.modules[0].lessons[0]._id : null;
+
+      const newProgress = await CourseProgress.create({
+        user: req.user.id,
+        course: req.params.courseId,
+        currentModule: moduleId,
+        currentLesson: lessonId,
+        completedLessons: [],
+        progressPercentage: 0,
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: newProgress,
       });
     }
 
@@ -121,5 +144,41 @@ exports.markLessonComplete = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+// Function to create course progress for all users when a new course is created
+exports.createProgressForNewCourse = async (courseId, userId) => {
+  try {
+    // Find the course to get the first module and lesson IDs
+    const course = await Course.findById(courseId);
+    if (!course || !course.modules || course.modules.length === 0) {
+      await CourseProgress.create({
+        user: userId,
+        course: courseId,
+        currentModule: null,
+        currentLesson: null,
+        completedLessons: [],
+        progressPercentage: 0,
+      });
+      return true;
+    }
+
+    // Get first module and lesson IDs
+    const moduleId = course.modules[0]._id;
+    const lessonId = course.modules[0].lessons && course.modules[0].lessons.length > 0 ? course.modules[0].lessons[0]._id : null;
+
+    await CourseProgress.create({
+      user: userId,
+      course: courseId,
+      currentModule: moduleId,
+      currentLesson: lessonId,
+      completedLessons: [],
+      progressPercentage: 0,
+    });
+    return true;
+  } catch (error) {
+    console.error("Error creating progress for new course:", error);
+    return false;
   }
 };

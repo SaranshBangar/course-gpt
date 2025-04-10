@@ -1,48 +1,16 @@
+import { Course } from "@/types/types";
 import axios from "axios";
 
-const API_URL = `${process.env.REACT_APP_API_URL}/courses`;
+const API_URL = `${import.meta.env.VITE_API_URL}/courses`;
 
 const getAuthConfig = () => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token") || "";
   return {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   };
 };
-
-interface Lesson {
-  _id?: string;
-  title: string;
-  content: string;
-  resources: string[];
-  order: number;
-}
-
-interface Module {
-  _id?: string;
-  title: string;
-  description: string;
-  prerequisites: string[];
-  difficulty: string;
-  estimatedTime: number;
-  lessons: Lesson[];
-  order: number;
-}
-
-interface Course {
-  _id?: string;
-  title: string;
-  description: string;
-  tags: string[];
-  coverImage?: string;
-  visibility: "private" | "public";
-  difficulty: "beginner" | "intermediate" | "advanced";
-  modules: Module[];
-  user?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
 
 interface CourseResponse {
   success: boolean;
@@ -105,7 +73,7 @@ export const deleteCourse = async (courseId: string): Promise<{ success: boolean
   }
 };
 
-export const addModule = async (courseId: string, moduleData: Module): Promise<CourseResponse> => {
+export const addModule = async (courseId: string, moduleData: any): Promise<CourseResponse> => {
   try {
     const response = await axios.post(`${API_URL}/${courseId}/modules`, moduleData, getAuthConfig());
     return response.data;
@@ -115,7 +83,7 @@ export const addModule = async (courseId: string, moduleData: Module): Promise<C
   }
 };
 
-export const addLesson = async (courseId: string, moduleId: string, lessonData: Lesson): Promise<CourseResponse> => {
+export const addLesson = async (courseId: string, moduleId: string, lessonData: any): Promise<CourseResponse> => {
   try {
     const response = await axios.post(`${API_URL}/${courseId}/modules/${moduleId}/lessons`, lessonData, getAuthConfig());
     return response.data;
@@ -123,14 +91,4 @@ export const addLesson = async (courseId: string, moduleId: string, lessonData: 
     console.error("Error adding lesson:", error);
     throw error;
   }
-};
-
-export default {
-  createCourse,
-  getCourses,
-  getCourse,
-  updateCourse,
-  deleteCourse,
-  addModule,
-  addLesson,
 };

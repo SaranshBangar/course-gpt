@@ -1,26 +1,16 @@
+import { CourseProgress } from "@/types/types";
 import axios from "axios";
 
-const API_URL = `${process.env.REACT_APP_API_URL}/progress`;
+const API_URL = `${import.meta.env.VITE_API_URL}/progress`;
 
 const getAuthConfig = () => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token") || "";
   return {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   };
 };
-
-interface CourseProgress {
-  _id?: string;
-  user: string;
-  course: string;
-  currentModule: number;
-  currentLesson: number;
-  completedLessons: string[];
-  progressPercentage: number;
-  lastAccessed?: Date;
-}
 
 interface CourseProgressResponse {
   success: boolean;
@@ -71,11 +61,4 @@ export const markLessonComplete = async (courseId: string, lessonId: string): Pr
     console.error("Error marking lesson complete:", error);
     throw error;
   }
-};
-
-export default {
-  updateProgress,
-  getProgress,
-  getAllProgress,
-  markLessonComplete,
 };

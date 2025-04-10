@@ -1,9 +1,9 @@
 import axios from "axios";
 
-const API_URL = `${process.env.REACT_APP_API_URL}/settings`;
+const API_URL = `${import.meta.env.VITE_API_URL}/settings`;
 
 const getAuthConfig = () => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token") || "";
   return {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -55,10 +55,4 @@ export const toggleNotifications = async (notificationSettings: Partial<Notifica
     console.error("Error toggling notifications:", error);
     throw error;
   }
-};
-
-export default {
-  getSettings,
-  updateSettings,
-  toggleNotifications,
 };

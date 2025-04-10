@@ -23,7 +23,7 @@ const moduleSchema = new mongoose.Schema({
   title: String,
   description: String,
   prerequisites: [String],
-  difficulty: { type: String, enum: ["Beginner", "Intermediate", "Advanced"] },
+  difficulty: { type: String, enum: ["beginner", "intermediate", "advanced"] },
   estimatedTime: Number,
   lessons: [lessonSchema],
   order: Number,
