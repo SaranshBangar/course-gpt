@@ -23,6 +23,16 @@ interface AllProgressResponse {
   data: CourseProgress[];
 }
 
+export interface ProgressHistoryItem {
+  date: string;
+  progress: number;
+}
+
+interface ProgressHistoryResponse {
+  success: boolean;
+  data: ProgressHistoryItem[];
+}
+
 export const updateProgress = async (courseId: string, progressData: Partial<CourseProgress>): Promise<CourseProgressResponse> => {
   try {
     const response = await axios.post(`${API_URL}/${courseId}`, progressData, getAuthConfig());
@@ -59,6 +69,16 @@ export const markLessonComplete = async (courseId: string, lessonId: string): Pr
     return response.data;
   } catch (error) {
     console.error("Error marking lesson complete:", error);
+    throw error;
+  }
+};
+
+export const getProgressHistory = async (courseId: string): Promise<ProgressHistoryItem[]> => {
+  try {
+    const response = await axios.get(`${API_URL}/${courseId}/history`, getAuthConfig());
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching progress history:", error);
     throw error;
   }
 };

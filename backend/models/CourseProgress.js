@@ -9,6 +9,13 @@ const progressSchema = new mongoose.Schema(
     currentLesson: { type: mongoose.Schema.Types.ObjectId, ref: "Lesson", default: null },
     progressPercentage: { type: Number, default: 0, min: 0, max: 100 },
     lastAccessed: { type: Date, default: Date.now },
+    // Add progress history tracking
+    progressHistory: [
+      {
+        date: { type: Date, default: Date.now },
+        percentage: { type: Number, min: 0, max: 100 },
+      },
+    ],
   },
   {
     timestamps: true,

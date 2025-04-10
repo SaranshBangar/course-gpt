@@ -25,8 +25,14 @@ exports.updateProgress = async (req, res, next) => {
         currentLesson: req.body.currentLesson,
         completedLessons: req.body.completedLessons || [],
         progressPercentage: req.body.progressPercentage || 0,
+        progressHistory: [{ date: new Date(), percentage: req.body.progressPercentage || 0 }],
       });
     } else {
+      // If progress percentage is changing, add to history
+      if (req.body.progressPercentage !== undefined && progress.progressPercentage !== req.body.progressPercentage) {
+        req.body.progressHistory = [...progress.progressHistory, { date: new Date(), percentage: req.body.progressPercentage }];
+      }
+
       progress = await CourseProgress.findOneAndUpdate({ user: req.user.id, course: req.params.courseId }, req.body, {
         new: true,
         runValidators: true,
@@ -131,7 +137,16 @@ exports.markLessonComplete = async (req, res, next) => {
       });
 
       const completedCount = progress.completedLessons.length;
-      progress.progressPercentage = Math.round((completedCount / totalLessons) * 100);
+      const newPercentage = Math.round((completedCount / totalLessons) * 100);
+      progress.progressPercentage = newPercentage;
+
+      // Add to history if percentage changed
+      if (newPercentage !== progress.progressPercentage) {
+        progress.progressHistory.push({
+          date: new Date(),
+          percentage: newPercentage,
+        });
+      }
 
       progress.lastAccessed = Date.now();
 
@@ -141,6 +156,36 @@ exports.markLessonComplete = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: progress,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// New function to get progress history
+exports.getProgressHistory = async (req, res, next) => {
+  try {
+    const progress = await CourseProgress.findOne({
+      user: req.user.id,
+      course: req.params.courseId,
+    });
+
+    if (!progress) {
+      return res.status(404).json({
+        success: false,
+        message: "No progress found for this course",
+      });
+    }
+
+    // Format the history data for the chart
+    const formattedHistory = progress.progressHistory.map((item) => ({
+      date: item.date.toISOString().split("T")[0],
+      progress: item.percentage,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formattedHistory,
     });
   } catch (error) {
     next(error);
