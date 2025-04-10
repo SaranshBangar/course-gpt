@@ -27,6 +27,10 @@ app.use("/api/progress", progressRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/ai", aiRoutes);
 
+app.get("/", (req, res) => {
+  res.send("API is running...");
+});
+
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT;
